@@ -16,10 +16,49 @@ connectDB();
 const __dirname = path.resolve();
 
 
-app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:5174'],
+// CORS configuration
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+
+    const allowedOrigins = [
+      'http://localhost:5173',
+      'http://localhost:5174',
+      'http://localhost:3000',
+      // Add your production frontend URLs here
+      process.env.FRONTEND_URL,
+      // Allow Render preview URLs
+      /^https:\/\/.*\.onrender\.com$/,
+      // Allow Vercel URLs
+      /^https:\/\/.*\.vercel\.app$/,
+      // Allow Netlify URLs
+      /^https:\/\/.*\.netlify\.app$/
+    ].filter(Boolean);
+
+    const isAllowed = allowedOrigins.some(allowedOrigin => {
+      if (typeof allowedOrigin === 'string') {
+        return origin === allowedOrigin;
+      }
+      if (allowedOrigin instanceof RegExp) {
+        return allowedOrigin.test(origin);
+      }
+      return false;
+    });
+
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      console.log(`[SERVER] ⚠️ CORS blocked origin: ${origin}`);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
-}));
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie']
+};
+
+app.use(cors(corsOptions));
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
@@ -31,17 +70,91 @@ app.use((req, res, next) => {
   next();
 });
 
+// API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/message', messageRoutes);
 
-if(process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, '../frontend/dist')));
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'OK',
+    message: 'Server is running',
+    timestamp: new Date().toISOString()
+  });
+});
 
+// API 404 handler - must come before static files
+app.use('/api/*', (req, res) => {
+  res.status(404).json({
+    success: false,
+    message: 'API endpoint not found',
+    error: 'NOT_FOUND'
+  });
+});
+
+// Production static file serving
+if (process.env.NODE_ENV === 'production') {
+  const frontendDistPath = path.join(__dirname, '../frontend/dist');
+
+  // Serve static files
+  app.use(express.static(frontendDistPath));
+
+  // SPA fallback - only for non-API routes
   app.get('*', (req, res) => {
-    res.sendFile(path.resolve(__dirname, '../frontend/dist/index.html'));
+    // Don't serve index.html for API routes
+    if (req.path.startsWith('/api/')) {
+      return res.status(404).json({
+        success: false,
+        message: 'API endpoint not found'
+      });
+    }
+
+    res.sendFile(path.resolve(frontendDistPath, 'index.html'));
   });
 }
 
+// Global error handler
+app.use((error, req, res, next) => {
+  console.error(`[SERVER] ❌ Global error handler:`, error.message);
+  console.error(`[SERVER] Stack trace:`, error.stack);
+
+  // Handle specific error types
+  if (error.name === 'ValidationError') {
+    return res.status(400).json({
+      success: false,
+      message: 'Validation error',
+      error: 'VALIDATION_ERROR'
+    });
+  }
+
+  if (error.name === 'CastError') {
+    return res.status(400).json({
+      success: false,
+      message: 'Invalid ID format',
+      error: 'INVALID_ID'
+    });
+  }
+
+  // Default error response
+  res.status(500).json({
+    success: false,
+    message: 'Internal server error',
+    error: 'INTERNAL_ERROR'
+  });
+});
+
+// 404 handler for unmatched routes
+app.use('*', (req, res) => {
+  console.log(`[SERVER] ⚠️ 404 - Route not found: ${req.method} ${req.originalUrl}`);
+  res.status(404).json({
+    success: false,
+    message: 'Route not found',
+    error: 'NOT_FOUND'
+  });
+});
+
 server.listen(PORT, () => {
-  console.log(`Server started on port ${PORT}`);
+  console.log(`[SERVER] 🚀 Server started on port ${PORT}`);
+  console.log(`[SERVER] 🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`[SERVER] 🔗 Health check: http://localhost:${PORT}/health`);
 });
