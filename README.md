@@ -90,8 +90,8 @@ npm run dev
 ```
 
 ### 4. Access the Application
-- **Frontend**: http://localhost:5173
-- **Backend**: http://localhost:5001
+- **Frontend**: https://chatty-real-time-chat-app-green.vercel.app/
+- **Backend**: https://chatty-real-time-chat-app-ciu4.onrender.com
 
 ## 📁 Project Structure
 
