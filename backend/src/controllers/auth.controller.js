@@ -59,6 +59,7 @@ export const signup = async (req, res) => {
             fullName: newUser.fullName,
             email: newUser.email,
             profilePic: newUser.profilePic,
+            token: token // Include token for cross-domain support
         });
 
     } catch (error) {
@@ -121,6 +122,7 @@ export const login = async (req, res) => {
             fullName: existingUser.fullName,
             email: existingUser.email,
             profilePic: existingUser.profilePic,
+            token: token // Include token for cross-domain support
         });
 
     } catch (error) {

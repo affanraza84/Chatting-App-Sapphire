@@ -30,10 +30,18 @@ if (import.meta.env.MODE !== "development") {
     });
 }
 
-// Request interceptor for logging
+// Request interceptor for logging and token handling
 axiosInstance.interceptors.request.use(
     (config) => {
         console.log(`[API] 📤 ${config.method?.toUpperCase()} ${config.url}`);
+
+        // Add token from localStorage as fallback for cross-domain issues
+        const token = localStorage.getItem('chat-token');
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+            console.log('[API] 🔑 Added Authorization header');
+        }
+
         return config;
     },
     (error) => {

@@ -18,8 +18,13 @@ const __dirname = path.resolve();
 // CORS configuration
 const corsOptions = {
   origin: function (origin, callback) {
+    console.log(`[CORS] 🌐 Request from origin: ${origin}`);
+
     // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
+    if (!origin) {
+      console.log('[CORS] ✅ Allowing request with no origin');
+      return callback(null, true);
+    }
 
     const allowedOrigins = [
       'http://localhost:5173',
@@ -32,9 +37,7 @@ const corsOptions = {
       // Allow Vercel URLs
       /^https:\/\/.*\.vercel\.app$/,
       // Allow Netlify URLs
-      /^https:\/\/.*\.netlify\.app$/,
-      // Allow any origin in production for now (you can restrict this later)
-      /^https:\/\/.*/
+      /^https:\/\/.*\.netlify\.app$/
     ].filter(Boolean);
 
     const isAllowed = allowedOrigins.some(allowedOrigin => {
@@ -48,15 +51,25 @@ const corsOptions = {
     });
 
     if (isAllowed) {
+      console.log(`[CORS] ✅ Allowing origin: ${origin}`);
       callback(null, true);
     } else {
-      console.log(`[SERVER] ⚠️ CORS blocked origin: ${origin}`);
-      callback(null, true); // Allow all origins in production for now
+      console.log(`[CORS] ⚠️ Origin not in allowed list, but allowing anyway: ${origin}`);
+      // Allow all HTTPS origins for now to avoid CORS issues
+      callback(null, true);
     }
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie']
+  allowedHeaders: [
+    'Content-Type',
+    'Authorization',
+    'Cookie',
+    'Set-Cookie',
+    'Access-Control-Allow-Credentials',
+    'Access-Control-Allow-Origin'
+  ],
+  exposedHeaders: ['Set-Cookie']
 };
 
 app.use(cors(corsOptions));
