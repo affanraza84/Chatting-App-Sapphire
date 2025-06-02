@@ -1,10 +1,34 @@
 import axios from "axios";
 import toast from "react-hot-toast";
 
+const getBaseURL = () => {
+    if (import.meta.env.MODE === "development") {
+        return "http://localhost:5001/api";
+    }
+
+    // In production, use environment variable
+    const apiUrl = import.meta.env.VITE_API_URL;
+    if (apiUrl) {
+        return `${apiUrl}/api`;
+    }
+
+    // Fallback to relative path
+    return "/api";
+};
+
 export const axiosInstance = axios.create({
-    baseURL: import.meta.env.MODE === "development" ? "http://localhost:5001/api" : "/api",
+    baseURL: getBaseURL(),
     withCredentials: true,
 });
+
+// Debug logging for production
+if (import.meta.env.MODE !== "development") {
+    console.log('[API] 🔧 Production API Configuration:', {
+        baseURL: getBaseURL(),
+        VITE_API_URL: import.meta.env.VITE_API_URL,
+        MODE: import.meta.env.MODE
+    });
+}
 
 // Request interceptor for logging
 axiosInstance.interceptors.request.use(

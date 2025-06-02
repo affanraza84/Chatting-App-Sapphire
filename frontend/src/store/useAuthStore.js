@@ -3,7 +3,9 @@ import { axiosInstance } from "../lib/axios.js";
 import toast from "react-hot-toast";
 import { io } from "socket.io-client";
 
-const BASE_URL = import.meta.env.MODE === "development" ? "http://localhost:5001" : "/";
+const BASE_URL = import.meta.env.MODE === "development"
+    ? "http://localhost:5001"
+    : import.meta.env.VITE_SOCKET_URL || import.meta.env.VITE_API_URL;
 
 export const useAuthStore = create((set, get) => ({
     authUser: null,
@@ -158,6 +160,11 @@ export const useAuthStore = create((set, get) => ({
 
         console.log(`[SOCKET] 🔌 Connecting socket for user: ${authUser._id}`);
         console.log(`[SOCKET] 🌐 Socket URL: ${BASE_URL}`);
+        console.log(`[SOCKET] 🔧 Environment variables:`, {
+            MODE: import.meta.env.MODE,
+            VITE_SOCKET_URL: import.meta.env.VITE_SOCKET_URL,
+            VITE_API_URL: import.meta.env.VITE_API_URL
+        });
 
         try {
             const socket = io(BASE_URL, {

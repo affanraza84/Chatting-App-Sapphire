@@ -13,6 +13,7 @@ import { useEffect } from "react";
 
 import { Loader } from "lucide-react";
 import { Toaster } from "react-hot-toast";
+import EnvDebugger from "./components/EnvDebugger";
 
 const App = () => {
   const { authUser, checkAuth, isCheckingAuth, onlineUsers } = useAuthStore();
@@ -46,6 +47,7 @@ const App = () => {
       </Routes>
 
       <Toaster />
+      <EnvDebugger />
     </div>
   );
 };
