@@ -160,10 +160,12 @@ VITE_SOCKET_URL=http://localhost:5001
 
 ## 🎥 Demo Video
 
-> **📹 Demo Video Placeholder**
-> 
-> *A comprehensive demo video will be added here showcasing:*
-> 
+
+
+https://github.com/user-attachments/assets/0adf52d8-c1e2-4ab3-896c-97f4ab36ed6a
+
+
+
 > **Application Features:**
 > 1. User registration and authentication flow
 > 2. Real-time messaging between multiple users
