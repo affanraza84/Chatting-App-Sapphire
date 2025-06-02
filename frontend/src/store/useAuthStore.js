@@ -157,34 +157,90 @@ export const useAuthStore = create((set, get) => ({
         }
 
         console.log(`[SOCKET] 🔌 Connecting socket for user: ${authUser._id}`);
+        console.log(`[SOCKET] 🌐 Socket URL: ${BASE_URL}`);
 
-        const socket = io(BASE_URL, {
-            query: {
-                userId: authUser._id,
-            },
-        });
+        try {
+            const socket = io(BASE_URL, {
+                query: {
+                    userId: authUser._id,
+                },
+                transports: ['websocket', 'polling'], // Fallback to polling if websocket fails
+                timeout: 20000, // 20 second timeout
+                forceNew: true, // Force new connection
+                reconnection: true,
+                reconnectionDelay: 1000,
+                reconnectionAttempts: 5,
+                maxReconnectionAttempts: 5
+            });
 
-        socket.connect();
-        set({ socket: socket });
+            set({ socket: socket });
 
-        socket.on('connect', () => {
-            console.log('[SOCKET] ✅ Socket connected successfully');
-        });
+            socket.on('connect', () => {
+                console.log('[SOCKET] ✅ Socket connected successfully');
+                console.log(`[SOCKET] 🆔 Socket ID: ${socket.id}`);
+            });
 
-        socket.on('disconnect', () => {
-            console.log('[SOCKET] 🔌 Socket disconnected');
-        });
+            socket.on('disconnect', (reason) => {
+                console.log('[SOCKET] 🔌 Socket disconnected:', reason);
+            });
 
-        socket.on('connect_error', (error) => {
-            console.error('[SOCKET] ❌ Socket connection error:', error.message);
-        });
+            socket.on('connect_error', (error) => {
+                console.error('[SOCKET] ❌ Socket connection error:', error.message);
+                console.error('[SOCKET] 📊 Error details:', error);
 
-        socket.on("getOnlineUsers", (userIds) => {
-            console.log(`[SOCKET] 👥 Received online users: [${userIds.join(', ')}]`);
-            set({ onlineUsers: userIds });
-        });
+                // Don't show error toast for every connection attempt
+                if (error.message !== 'server error') {
+                    toast.error('Connection failed - some features may not work');
+                }
+            });
+
+            socket.on('reconnect', (attemptNumber) => {
+                console.log(`[SOCKET] 🔄 Socket reconnected after ${attemptNumber} attempts`);
+            });
+
+            socket.on('reconnect_error', (error) => {
+                console.error('[SOCKET] ❌ Socket reconnection error:', error.message);
+            });
+
+            socket.on('reconnect_failed', () => {
+                console.error('[SOCKET] ❌ Socket reconnection failed - giving up');
+                toast.error('Connection lost - please refresh the page');
+            });
+
+            socket.on("getOnlineUsers", (userIds) => {
+                // Ensure userIds is an array
+                const onlineUsers = Array.isArray(userIds) ? userIds : [];
+                console.log(`[SOCKET] 👥 Received online users: [${onlineUsers.join(', ')}]`);
+                set({ onlineUsers });
+            });
+
+        } catch (error) {
+            console.error('[SOCKET] ❌ Error creating socket connection:', error);
+            toast.error('Failed to establish real-time connection');
+        }
     },
     disconnectSocket: () => {
-        if (get().socket?.connected) get().socket.disconnect();
+        const socket = get().socket;
+
+        if (socket) {
+            console.log('[SOCKET] 🔌 Disconnecting socket...');
+
+            try {
+                // Remove all listeners
+                socket.removeAllListeners();
+
+                // Disconnect if connected
+                if (socket.connected) {
+                    socket.disconnect();
+                }
+
+                // Clear socket from state
+                set({ socket: null, onlineUsers: [] });
+
+                console.log('[SOCKET] ✅ Socket disconnected successfully');
+            } catch (error) {
+                console.error('[SOCKET] ❌ Error disconnecting socket:', error);
+            }
+        }
     },
 }));

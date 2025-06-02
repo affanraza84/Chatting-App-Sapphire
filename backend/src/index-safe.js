@@ -20,7 +20,7 @@ const corsOptions = {
   origin: function (origin, callback) {
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
-    
+
     const allowedOrigins = [
       'http://localhost:5173',
       'http://localhost:5174',
@@ -32,9 +32,11 @@ const corsOptions = {
       // Allow Vercel URLs
       /^https:\/\/.*\.vercel\.app$/,
       // Allow Netlify URLs
-      /^https:\/\/.*\.netlify\.app$/
+      /^https:\/\/.*\.netlify\.app$/,
+      // Allow any origin in production for now (you can restrict this later)
+      /^https:\/\/.*/
     ].filter(Boolean);
-    
+
     const isAllowed = allowedOrigins.some(allowedOrigin => {
       if (typeof allowedOrigin === 'string') {
         return origin === allowedOrigin;
@@ -44,7 +46,7 @@ const corsOptions = {
       }
       return false;
     });
-    
+
     if (isAllowed) {
       callback(null, true);
     } else {
@@ -75,8 +77,8 @@ app.use('/api/message', messageRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
-  res.status(200).json({ 
-    status: 'OK', 
+  res.status(200).json({
+    status: 'OK',
     message: 'Server is running',
     timestamp: new Date().toISOString()
   });
@@ -94,7 +96,7 @@ app.use('/api', (req, res) => {
 // Production static file serving
 if (process.env.NODE_ENV === 'production') {
   const frontendDistPath = path.join(__dirname, '../frontend/dist');
-  
+
   // Serve static files
   app.use(express.static(frontendDistPath));
 
@@ -102,7 +104,7 @@ if (process.env.NODE_ENV === 'production') {
   app.get('/', (req, res) => {
     res.sendFile(path.resolve(frontendDistPath, 'index.html'));
   });
-  
+
   // Handle common SPA routes explicitly
   const spaRoutes = ['/login', '/signup', '/profile', '/chat'];
   spaRoutes.forEach(route => {
@@ -116,7 +118,7 @@ if (process.env.NODE_ENV === 'production') {
 app.use((error, req, res, next) => {
   console.error(`[SERVER] ❌ Global error handler:`, error.message);
   console.error(`[SERVER] Stack trace:`, error.stack);
-  
+
   // Handle specific error types
   if (error.name === 'ValidationError') {
     return res.status(400).json({
@@ -125,7 +127,7 @@ app.use((error, req, res, next) => {
       error: 'VALIDATION_ERROR'
     });
   }
-  
+
   if (error.name === 'CastError') {
     return res.status(400).json({
       success: false,
@@ -133,7 +135,7 @@ app.use((error, req, res, next) => {
       error: 'INVALID_ID'
     });
   }
-  
+
   // Default error response
   res.status(500).json({
     success: false,

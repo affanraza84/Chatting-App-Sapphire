@@ -16,9 +16,13 @@ const Sidebar = () => {
     getUsers();
   }, [getUsers]);
 
+  // Ensure users and onlineUsers are arrays
+  const safeUsers = Array.isArray(users) ? users : [];
+  const safeOnlineUsers = Array.isArray(onlineUsers) ? onlineUsers : [];
+
   const filteredUsers = showOnlineOnly
-    ? users.filter((user) => onlineUsers.includes(user._id))
-    : users;
+    ? safeUsers.filter((user) => safeOnlineUsers.includes(user._id))
+    : safeUsers;
 
   if (isUsersLoading) return <SidebarSkeleton />;
 

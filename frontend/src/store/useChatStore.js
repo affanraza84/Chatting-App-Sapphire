@@ -17,12 +17,21 @@ export const useChatStore = create((set, get) => ({
     try {
       const res = await axiosInstance.get("/message/users");
 
-      console.log(`[CHAT] ✅ Fetched ${res.data.length} users successfully`);
-      set({ users: res.data });
+      // Ensure we have valid data and it's an array
+      const users = Array.isArray(res.data) ? res.data : [];
+
+      console.log(`[CHAT] ✅ Fetched ${users.length} users successfully`);
+      console.log('[CHAT] 📊 Users data:', users);
+
+      set({ users });
     } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Failed to fetch users';
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to fetch users';
 
       console.error('[CHAT] ❌ Error fetching users:', errorMessage);
+      console.error('[CHAT] 📊 Full error:', error);
+
+      // Set empty array on error
+      set({ users: [] });
       toast.error(errorMessage);
     } finally {
       set({ isUsersLoading: false });
@@ -40,14 +49,22 @@ export const useChatStore = create((set, get) => ({
 
       const res = await axiosInstance.get(`/message/${userId}`);
 
-      console.log(`[CHAT] ✅ Fetched ${res.data.length} messages successfully`);
-      set({ messages: res.data });
+      // Ensure we have valid data and it's an array
+      const messages = Array.isArray(res.data) ? res.data : [];
+
+      console.log(`[CHAT] ✅ Fetched ${messages.length} messages successfully`);
+      console.log('[CHAT] 📊 Messages data:', messages);
+
+      set({ messages });
     } catch (error) {
       const errorMessage = error.response?.data?.message || error.message || 'Failed to fetch messages';
 
       console.error('[CHAT] ❌ Error fetching messages:', errorMessage);
+      console.error('[CHAT] 📊 Full error:', error);
+
+      // Clear messages on error
+      set({ messages: [] });
       toast.error(errorMessage);
-      set({ messages: [] }); // Clear messages on error
     } finally {
       set({ isMessagesLoading: false });
     }
