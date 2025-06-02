@@ -1,13 +1,12 @@
 import express from 'express'
-const router = express.Router();
-import { signup, login, logout } from '../controllers/auth.controller.js'
-import { protectRoute } from '../middlewares/auth.middleware.js'
-import { updateProfile } from '../controllers/auth.controller.js'
 import multer from 'multer'
-import { checkAuth } from '../controllers/auth.controller.js'
+import { signup, login, logout, updateProfile, checkAuth } from '../controllers/auth.controller.js'
+import { protectRoute } from '../middlewares/auth.middleware.js'
+
+const router = express.Router();
 
 const storage = multer.memoryStorage();
-const upload = multer({ 
+const upload = multer({
     storage: storage,
     limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
 });

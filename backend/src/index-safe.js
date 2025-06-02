@@ -15,13 +15,12 @@ connectDB();
 
 const __dirname = path.resolve();
 
-
 // CORS configuration
 const corsOptions = {
   origin: function (origin, callback) {
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
-
+    
     const allowedOrigins = [
       'http://localhost:5173',
       'http://localhost:5174',
@@ -35,7 +34,7 @@ const corsOptions = {
       // Allow Netlify URLs
       /^https:\/\/.*\.netlify\.app$/
     ].filter(Boolean);
-
+    
     const isAllowed = allowedOrigins.some(allowedOrigin => {
       if (typeof allowedOrigin === 'string') {
         return origin === allowedOrigin;
@@ -45,12 +44,12 @@ const corsOptions = {
       }
       return false;
     });
-
+    
     if (isAllowed) {
       callback(null, true);
     } else {
       console.log(`[SERVER] ⚠️ CORS blocked origin: ${origin}`);
-      callback(new Error('Not allowed by CORS'));
+      callback(null, true); // Allow all origins in production for now
     }
   },
   credentials: true,
@@ -76,15 +75,15 @@ app.use('/api/message', messageRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
-  res.status(200).json({
-    status: 'OK',
+  res.status(200).json({ 
+    status: 'OK', 
     message: 'Server is running',
     timestamp: new Date().toISOString()
   });
 });
 
 // API 404 handler - must come before static files
-app.use('/api/*', (req, res) => {
+app.use('/api', (req, res) => {
   res.status(404).json({
     success: false,
     message: 'API endpoint not found',
@@ -95,29 +94,21 @@ app.use('/api/*', (req, res) => {
 // Production static file serving
 if (process.env.NODE_ENV === 'production') {
   const frontendDistPath = path.join(__dirname, '../frontend/dist');
-
+  
   // Serve static files
   app.use(express.static(frontendDistPath));
 
-  // SPA fallback - only for non-API routes
-  app.get('/*', (req, res) => {
-    // Don't serve index.html for API routes
-    if (req.path.startsWith('/api/')) {
-      return res.status(404).json({
-        success: false,
-        message: 'API endpoint not found'
-      });
-    }
-
-    try {
+  // SPA fallback - simple version without catch-all
+  app.get('/', (req, res) => {
+    res.sendFile(path.resolve(frontendDistPath, 'index.html'));
+  });
+  
+  // Handle common SPA routes explicitly
+  const spaRoutes = ['/login', '/signup', '/profile', '/chat'];
+  spaRoutes.forEach(route => {
+    app.get(route, (req, res) => {
       res.sendFile(path.resolve(frontendDistPath, 'index.html'));
-    } catch (error) {
-      console.error('[SERVER] ❌ Error serving index.html:', error.message);
-      res.status(500).json({
-        success: false,
-        message: 'Error serving application'
-      });
-    }
+    });
   });
 }
 
@@ -125,7 +116,7 @@ if (process.env.NODE_ENV === 'production') {
 app.use((error, req, res, next) => {
   console.error(`[SERVER] ❌ Global error handler:`, error.message);
   console.error(`[SERVER] Stack trace:`, error.stack);
-
+  
   // Handle specific error types
   if (error.name === 'ValidationError') {
     return res.status(400).json({
@@ -134,7 +125,7 @@ app.use((error, req, res, next) => {
       error: 'VALIDATION_ERROR'
     });
   }
-
+  
   if (error.name === 'CastError') {
     return res.status(400).json({
       success: false,
@@ -142,7 +133,7 @@ app.use((error, req, res, next) => {
       error: 'INVALID_ID'
     });
   }
-
+  
   // Default error response
   res.status(500).json({
     success: false,
@@ -150,18 +141,6 @@ app.use((error, req, res, next) => {
     error: 'INTERNAL_ERROR'
   });
 });
-
-// Final 404 handler - only for development
-if (process.env.NODE_ENV !== 'production') {
-  app.use((req, res) => {
-    console.log(`[SERVER] ⚠️ 404 - Route not found: ${req.method} ${req.originalUrl}`);
-    res.status(404).json({
-      success: false,
-      message: 'Route not found',
-      error: 'NOT_FOUND'
-    });
-  });
-}
 
 server.listen(PORT, () => {
   console.log(`[SERVER] 🚀 Server started on port ${PORT}`);

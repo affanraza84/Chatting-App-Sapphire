@@ -1,9 +1,8 @@
 import express from 'express'
-import { protectRoute } from '../middlewares/auth.middleware.js';
+import { protectRoute } from '../middlewares/auth.middleware.js'
+import { getUsersForSidebar, getMessages, sendMessages } from '../controllers/message.controller.js'
+
 const router = express.Router();
-import { getUsersForSidebar } from '../controllers/message.controller.js';
-import { getMessages } from '../controllers/message.controller.js';
-import { sendMessages } from '../controllers/message.controller.js';
 
 // Middleware to validate MongoDB ObjectId format
 const validateObjectId = (req, res, next) => {
