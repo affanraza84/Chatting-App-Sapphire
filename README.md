@@ -234,6 +234,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-**Built with ❤️ by [Your Name]**
-
 *For detailed setup instructions, please refer to the individual README files in the `frontend/` and `backend/` directories.*
