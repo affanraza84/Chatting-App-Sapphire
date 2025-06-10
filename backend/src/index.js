@@ -92,35 +92,6 @@ app.use('/api/*', (req, res) => {
   });
 });
 
-// Production static file serving
-if (process.env.NODE_ENV === 'production' && !process.env.RENDER) {
-  const frontendDistPath = path.join(__dirname, '../frontend/dist');
-
-  // Serve static files
-  app.use(express.static(frontendDistPath));
-
-  // SPA fallback - only for non-API routes
-  app.get('/*', (req, res) => {
-    // Don't serve index.html for API routes
-    if (req.path.startsWith('/api/')) {
-      return res.status(404).json({
-        success: false,
-        message: 'API endpoint not found'
-      });
-    }
-
-    try {
-      res.sendFile(path.resolve(frontendDistPath, 'index.html'));
-    } catch (error) {
-      console.error('[SERVER] ❌ Error serving index.html:', error.message);
-      res.status(500).json({
-        success: false,
-        message: 'Error serving application'
-      });
-    }
-  });
-}
-
 // Global error handler
 app.use((error, req, res, next) => {
   console.error(`[SERVER] ❌ Global error handler:`, error.message);
