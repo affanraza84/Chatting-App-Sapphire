@@ -93,7 +93,7 @@ app.use('/api/*', (req, res) => {
 });
 
 // Production static file serving
-if (process.env.NODE_ENV === 'production') {
+if (process.env.NODE_ENV === 'production' && !process.env.RENDER) {
   const frontendDistPath = path.join(__dirname, '../frontend/dist');
 
   // Serve static files
